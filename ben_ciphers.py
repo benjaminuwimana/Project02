@@ -61,31 +61,48 @@ class Utilities():
         Keeps the encoded message in the current cipher object.
         '''
         if action == 1:
-            text = input('\nPlease enter the text to ENCODE: ')
+            text = self.check_special_character()
             if len(text) > 0:
-                current_cipher.encoded_message = current_cipher.encrypt(text)
+                current_cipher.encoded_message = self.msg_in_blocks(
+                    current_cipher.encrypt(text), 5)
                 print('\n\tEncoded Text (using {} Cipher): \n\t\t{}'.
                       format(current_cipher.__class__.__name__,
-                             self.msg_in_blocks(current_cipher.
-                                                encoded_message, 5)))
+                             current_cipher.encoded_message))
             else:
                 print('\nNon text to ENCODE!')
         elif action == 2:
-            text = input('\nText to DECODE (blank == default): ')
+            text = input('\nText to DECODE: ')
+            text = self.remake_otp_coded_msg(text)
             if len(text) > 0:
                 print('\n\tDecoded message (using {} Cipher): \n\t\t{}'.
                       format(current_cipher.__class__.__name__,
                              current_cipher.decrypt(text)))
             elif len(current_cipher.encoded_message) > 0:
                 print('\n\tEncoded Text: \n\t{}'.
-                      format(self.msg_in_blocks(
-                          current_cipher.encoded_message, 5)))
+                      format(current_cipher.encoded_message))
                 print('\n\tDecoded message (using {} Cipher): \n\t{}'.format(
                     current_cipher.__class__.__name__,
-                    current_cipher.decrypt(current_cipher.encoded_message)))
+                    current_cipher.decrypt(self.remake_otp_coded_msg(
+                        current_cipher.encoded_message))))
             else:
                 print('\nNon text to DECODE!')
         self.choose_action(current_cipher)
+
+    def check_special_character(self):
+        while True:
+            text = input('\nPlease enter the text to ENCODE: ')
+            if len(text) < 1:
+                continue
+            else:
+                has_special_char = False
+                for ch in text:
+                    if ch == 'ß' or ch == 'Ø':
+                        print("\n\n\t\t\t'ß' and 'Ø' are special characters.")
+                        print("\t\t\tPlease, remove them from the message.")
+                        has_special_char = True
+            if has_special_char:
+                continue
+            return text
 
     def first_secret(self):
         '''Gives user the ability to set the FIRST key, if the selected
@@ -128,12 +145,21 @@ class Utilities():
         '''
         msg = ''
         block_len = int(block_len)
-        text = text.replace(' ', '')
-        text = text + 'Z' * (block_len - (len(text) % block_len))
+        text = text.replace(' ', 'ß')
+        text = text + 'Ø' * (block_len - (len(text) % block_len))
         blocks = [text[i:i+block_len] for i in range(0, len(text), block_len)]
         for block in blocks:
             msg = msg + block + ' '
         return msg
+
+    def remake_otp_coded_msg(self, text):
+        '''Re-constitute the message as it was
+        before formatting of display.
+        '''
+        text = text.replace(' ', '')
+        text = text.replace('ß', ' ')
+        text = text.replace('Ø', '')
+        return text
 
 
 class OneTimePad():
@@ -220,19 +246,19 @@ class OneTimePad():
         '''
         text = text.replace(' ', '')
         while True:
-            opt_key = input('\nEnter your One-Time Pad: ')
-            opt_key = opt_key.upper()
-            if len(opt_key) < 1 or len(opt_key) > len(text):
+            otp_key = input('\nEnter your One-Time Pad: ')
+            otp_key = otp_key.upper()
+            if len(otp_key) < 1 or len(otp_key) > len(text):
                 print('\nOne-Time Pad lenght is between one and {} characters'.
                       format(len(text)))
                 continue
-            if self.check_opt_alphabet(opt_key):
-                return opt_key
+            if self.check_otp_alphabet(otp_key):
+                return otp_key
             else:
                 continue
 
-    def check_opt_alphabet(self, opt_key):
-        for char in opt_key:
+    def check_otp_alphabet(self, otp_key):
+        for char in otp_key:
             try:
                 self.alphabet.index(char)
             except ValueError:
